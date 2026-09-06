@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Channel Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #101214;
+    --panel: #17191c;
+    --panel-2: #1d2023;
+    --line: #2a2d31;
+    --text: #e8e6e2;
+    --text-dim: #8b8d92;
+    --accent: #c0392b;
+    --up: #5c9d72;
+    --down: #b5524a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+    padding:32px 20px 80px;
+  }
+  .wrap{max-width:1040px;margin:0 auto;}
+
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:16px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:20px;
+    margin-bottom:28px;
+  }
+  h1{
+    font-family:"Space Grotesk",sans-serif;
+    font-weight:600;
+    font-size:28px;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .date-line{color:var(--text-dim);font-size:14px;margin-top:4px;}
+  .header-actions{display:flex;gap:10px;align-items:center;}
+
+  button{
+    font-family:inherit;
+    cursor:pointer;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--text);
+    padding:9px 14px;
+    font-size:14px;
+  }
+  button:hover{border-color:#3a3d42;}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  button.primary:hover{background:#a8321f;}
+  button.ghost{background:transparent;}
+  button:disabled{opacity:0.5;cursor:default;}
+
+  .summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:32px;
+  }
+  .summary-cell{background:var(--panel);padding:18px 20px;}
+  .summary-label{font-size:12px;color:var(--text-dim);margin-bottom:6px;}
+  .summary-value{font-family:"Space Grotesk",sans-serif;font-size:26px;font-weight:600;}
+  .summary-delta{font-size:12px;margin-top:4px;}
+
+  #setup{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:20px;
+    margin-bottom:28px;
+  }
+  #setup h2{font-size:15px;margin:0 0 4px;font-weight:600;}
+  #setup p{color:var(--text-dim);font-size:13px;margin:0 0 16px;line-height:1.5;}
+  .field-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .field-row input{
+    flex:1;
+    min-width:160px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:9px 11px;
+    color:var(--text);
+    font-size:14px;
+    font-family:inherit;
+  }
+  .field-row input:focus{outline:none;border-color:var(--accent);}
+  .channel-inputs{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .setup-actions{display:flex;gap:10px;justify-content:flex-end;}
+  label.small{font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px;}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:16px;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:3px solid var(--accent-c, var(--accent));
+    border-radius:6px;
+    padding:18px 20px;
+  }
+  .card-top{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+  .card-thumb{
+    width:44px;height:44px;border-radius:50%;
+    object-fit:cover;background:var(--panel-2);
+    flex-shrink:0;
+  }
+  .card-name{font-weight:600;font-size:15px;}
+  .card-handle{font-size:12px;color:var(--text-dim);}
+  .card-meta{font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .card-footer{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}
+  .card-footer button{width:100%;}
+
+  #videoPanel{
+    display:none;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:20px;
+    margin-top:24px;
+  }
+  .video-panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .video-panel-head h2{font-size:16px;margin:0;font-weight:600;}
+  .video-panel-controls{display:flex;gap:8px;align-items:center;}
+  select{
+    font-family:inherit;
+    background:var(--panel-2);
+    color:var(--text);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:8px 10px;
+    font-size:13px;
+  }
+  .video-list{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .video-row{background:var(--panel);padding:12px 14px;cursor:pointer;}
+  .video-row-main{display:flex;align-items:center;gap:12px;}
+  .video-row-thumb{width:80px;height:45px;object-fit:cover;border-radius:4px;background:var(--panel-2);flex-shrink:0;}
+  .video-row-title{font-size:14px;font-weight:500;line-height:1.35;}
+  .video-row-sub{font-size:12px;color:var(--text-dim);margin-top:3px;}
+  .video-row-stats{margin-left:auto;text-align:right;flex-shrink:0;}
+  .video-row-views{font-family:"Space Grotesk",sans-serif;font-size:15px;font-weight:600;}
+  .video-row-stats-sub{font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .video-row-detail{
+    display:none;
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px solid var(--line);
+    font-size:13px;
+    color:var(--text-dim);
+    line-height:1.6;
+  }
+  .video-row.expanded .video-row-detail{display:block;}
+  .video-row-detail-stats{display:flex;gap:20px;flex-wrap:wrap;margin-top:10px;}
+  .video-row-detail-stat strong{color:var(--text);font-family:"Space Grotesk",sans-serif;}
+  .video-empty, .video-loading{padding:30px;text-align:center;color:var(--text-dim);font-size:14px;}
+  .stat-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding:8px 0;
+    border-top:1px solid var(--line);
+  }
+  .stat-row:first-of-type{border-top:none;}
+  .stat-label{font-size:13px;color:var(--text-dim);}
+  .stat-value-wrap{text-align:right;}
+  .stat-value{font-family:"Space Grotesk",sans-serif;font-size:18px;font-weight:600;}
+  .stat-delta{font-size:12px;margin-top:2px;}
+  .delta-up{color:var(--up);}
+  .delta-down{color:var(--down);}
+  .delta-flat{color:var(--text-dim);}
+
+  .empty, .error{
+    color:var(--text-dim);
+    font-size:14px;
+    padding:40px 0;
+    text-align:center;
+  }
+  .error{color:var(--down);}
+  .card.error-card{border-left-color:var(--down);}
+  .card.error-card .stat-label{color:var(--down);}
+
+  footer{
+    margin-top:40px;
+    color:var(--text-dim);
+    font-size:12px;
+    text-align:center;
+  }
+  footer a{color:var(--text-dim);}
+
+  @media (max-width:520px){
+    h1{font-size:23px;}
+    .summary-value{font-size:21px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Channel Watch</h1>
+      <div class="date-line" id="dateLine"></div>
+    </div>
+    <div class="header-actions">
+      <button class="ghost" id="settingsBtn">Settings</button>
+      <button class="primary" id="refreshBtn">Refresh</button>
+    </div>
+  </header>
+
+  <div id="setup" style="display:none;">
+    <h2>API key &amp; channels</h2>
+    <p>Your key and channel list are saved only in this browser (localStorage) — nothing is sent anywhere except Google's YouTube API. Enter a Channel ID (starts with UC…) or a handle (starts with @) for each channel.</p>
+    <label class="small">YouTube Data API key</label>
+    <div class="field-row">
+      <input type="text" id="apiKeyInput" placeholder="AIzaSy...">
+    </div>
+    <label class="small">Channels</label>
+    <div class="channel-inputs" id="channelInputs"></div>
+    <div class="setup-actions">
+      <button class="ghost" id="addChannelBtn">+ Add channel</button>
+      <button class="primary" id="saveSetupBtn">Save &amp; load</button>
+    </div>
+  </div>
+
+  <div class="summary" id="summary" style="display:none;"></div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="emptyState">No channels configured yet. Click Settings to add your API key and channels.</div>
+
+  <div id="videoPanel">
+    <div class="video-panel-head">
+      <h2 id="videoPanelTitle">Videos</h2>
+      <div class="video-panel-controls">
+        <select id="videoSort">
+          <option value="date">Most recent</option>
+          <option value="views">Most views</option>
+          <option value="likes">Most likes</option>
+          <option value="comments">Most comments</option>
+        </select>
+        <button class="ghost" id="closeVideoPanel">Close</button>
+      </div>
+    </div>
+    <div class="video-list" id="videoList"></div>
+  </div>
+
+  <footer>Data from the YouTube Data API v3 · refreshes each time you open or reload this page</footer>
+</div>
+
+<script>
+const LS_CONFIG = 'channelWatch.config';
+const LS_HISTORY = 'channelWatch.history';
+
+function loadConfig(){
+  try { return JSON.parse(localStorage.getItem(LS_CONFIG)) || { apiKey:'', channels:[] }; }
+  catch(e){ return { apiKey:'', channels:[] }; }
+}
+function saveConfig(cfg){ localStorage.setItem(LS_CONFIG, JSON.stringify(cfg)); }
+
+function loadHistory(){
+  try { return JSON.parse(localStorage.getItem(LS_HISTORY)) || {}; }
+  catch(e){ return {}; }
+}
+function saveHistory(h){ localStorage.setItem(LS_HISTORY, JSON.stringify(h)); }
+
+function todayKey(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function mostRecentPriorSnapshot(history, channelId, excludeKey){
+  const dates = Object.keys(history).filter(d => d !== excludeKey && history[d][channelId]).sort();
+  if(!dates.length) return null;
+  return history[dates[dates.length-1]][channelId];
+}
+
+function fmtNum(n){
+  n = Number(n);
+  if(isNaN(n)) return '—';
+  return n.toLocaleString('en-US');
+}
+function fmtCompact(n){
+  n = Number(n);
+  if(isNaN(n)) return '—';
+  return Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:1}).format(n);
+}
+
+const ACCENTS = ['#c0392b','#4d7ea8','#8a6bc1','#c1953a','#4d9d7c','#b5527a'];
+
+const dateLine = document.getElementById('dateLine');
+dateLine.textContent = new Date().toLocaleDateString('en-US',{weekday:'long', month:'long', day:'numeric', year:'numeric'});
+
+const setupPanel = document.getElementById('setup');
+const settingsBtn = document.getElementById('settingsBtn');
+const refreshBtn = document.getElementById('refreshBtn');
+const channelInputsEl = document.getElementById('channelInputs');
+const addChannelBtn = document.getElementById('addChannelBtn');
+const saveSetupBtn = document.getElementById('saveSetupBtn');
+const apiKeyInput = document.getElementById('apiKeyInput');
+const gridEl = document.getElementById('grid');
+const summaryEl = document.getElementById('summary');
+const emptyState = document.getElementById('emptyState');
+
+let config = loadConfig();
+
+function renderChannelInputRow(value=''){
+  const row = document.createElement('div');
+  row.className = 'field-row';
+  row.innerHTML = `
+    <input type="text" class="channel-id-input" placeholder="Channel ID (UC...) or @handle" value="${value.replace(/"/g,'&quot;')}">
+    <button class="ghost remove-row" type="button">Remove</button>
+  `;
+  row.querySelector('.remove-row').addEventListener('click', () => row.remove());
+  channelInputsEl.appendChild(row);
+}
+
+function openSetup(){
+  channelInputsEl.innerHTML = '';
+  apiKeyInput.value = config.apiKey || '';
+  if(config.channels.length){
+    config.channels.forEach(c => renderChannelInputRow(c));
+  } else {
+    renderChannelInputRow();
+  }
+  setupPanel.style.display = 'block';
+}
+
+settingsBtn.addEventListener('click', openSetup);
+addChannelBtn.addEventListener('click', () => renderChannelInputRow());
+
+saveSetupBtn.addEventListener('click', () => {
+  const ids = Array.from(document.querySelectorAll('.channel-id-input'))
+    .map(i => i.value.trim())
+    .filter(Boolean);
+  config = { apiKey: apiKeyInput.value.trim(), channels: ids };
+  saveConfig(config);
+  setupPanel.style.display = 'none';
+  loadAllChannels();
+});
+
+async function fetchChannel(apiKey, ref){
+  const isHandle = ref.startsWith('@');
+  const param = isHandle ? `forHandle=${encodeURIComponent(ref)}` : `id=${encodeURIComponent(ref)}`;
+  const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&${param}&key=${encodeURIComponent(apiKey)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if(!res.ok){
+    const msg = (data && data.error && data.error.message) ? data.error.message : `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  if(!data.items || !data.items.length){
+    throw new Error('Channel not found');
+  }
+  const item = data.items[0];
+  const videoCount = Number(item.statistics.videoCount);
+  const viewCount = Number(item.statistics.viewCount);
+  return {
+    id: item.id,
+    ref,
+    name: item.snippet.title,
+    thumb: item.snippet.thumbnails && (item.snippet.thumbnails.default || {}).url,
+    subs: item.statistics.hiddenSubscriberCount ? null : Number(item.statistics.subscriberCount),
+    views: viewCount,
+    videos: videoCount,
+    avgViews: videoCount ? Math.round(viewCount / videoCount) : null,
+    country: item.snippet.country || null,
+    createdAt: item.snippet.publishedAt,
+    uploadsPlaylist: item.contentDetails && item.contentDetails.relatedPlaylists && item.contentDetails.relatedPlaylists.uploads
+  };
+}
+
+function parseISODuration(iso){
+  const m = (iso||'').match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if(!m) return '—';
+  const h = parseInt(m[1]||0,10), mi = parseInt(m[2]||0,10), s = parseInt(m[3]||0,10);
+  if(h) return `${h}:${String(mi).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${mi}:${String(s).padStart(2,'0')}`;
+}
+
+async function fetchChannelVideos(apiKey, uploadsPlaylistId){
+  const plUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&maxResults=25&playlistId=${encodeURIComponent(uploadsPlaylistId)}&key=${encodeURIComponent(apiKey)}`;
+  const plRes = await fetch(plUrl);
+  const plData = await plRes.json();
+  if(!plRes.ok){
+    throw new Error((plData.error && plData.error.message) || 'Could not load uploads');
+  }
+  const ids = (plData.items || []).map(i => i.contentDetails.videoId).filter(Boolean);
+  if(!ids.length) return [];
+
+  const vUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&id=${ids.join(',')}&key=${encodeURIComponent(apiKey)}`;
+  const vRes = await fetch(vUrl);
+  const vData = await vRes.json();
+  if(!vRes.ok){
+    throw new Error((vData.error && vData.error.message) || 'Could not load video stats');
+  }
+  return (vData.items || []).map(v => ({
+    id: v.id,
+    title: v.snippet.title,
+    thumb: v.snippet.thumbnails && (v.snippet.thumbnails.medium || v.snippet.thumbnails.default || {}).url,
+    publishedAt: v.snippet.publishedAt,
+    description: v.snippet.description || '',
+    tagCount: (v.snippet.tags || []).length,
+    duration: parseISODuration(v.contentDetails.duration),
+    views: Number(v.statistics.viewCount || 0),
+    likes: v.statistics.likeCount != null ? Number(v.statistics.likeCount) : null,
+    comments: v.statistics.commentCount != null ? Number(v.statistics.commentCount) : null
+  }));
+}
+
+function deltaHTML(current, previous){
+  if(previous == null || current == null) return '<div class="stat-delta delta-flat">no prior data</div>';
+  const diff = current - previous;
+  if(diff === 0) return '<div class="stat-delta delta-flat">no change</div>';
+  const cls = diff > 0 ? 'delta-up' : 'delta-down';
+  const sign = diff > 0 ? '+' : '';
+  return `<div class="stat-delta ${cls}">${sign}${fmtNum(diff)} since last check</div>`;
+}
+
+function renderCard(result, prevSnapshot, accentColor){
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.setProperty('--accent-c', accentColor);
+
+  if(result.error){
+    card.classList.add('error-card');
+    card.innerHTML = `
+      <div class="card-top">
+        <div>
+          <div class="card-name">${result.ref}</div>
+          <div class="card-handle">could not load</div>
+        </div>
+      </div>
+      <div class="stat-row"><div class="stat-label">${result.error}</div></div>
+    `;
+    return card;
+  }
+
+  const subsDisplay = result.subs == null ? 'hidden' : fmtNum(result.subs);
+  const created = result.createdAt ? new Date(result.createdAt).toLocaleDateString('en-US',{month:'short', year:'numeric'}) : null;
+  const metaParts = [];
+  if(created) metaParts.push(`Since ${created}`);
+  if(result.country) metaParts.push(result.country);
+
+  card.innerHTML = `
+    <div class="card-top">
+      ${result.thumb ? `<img class="card-thumb" src="${result.thumb}" alt="">` : ''}
+      <div>
+        <div class="card-name">${result.name}</div>
+        <div class="card-handle">${result.ref}</div>
+        ${metaParts.length ? `<div class="card-meta">${metaParts.join(' · ')}</div>` : ''}
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-label">Subscribers</div>
+      <div class="stat-value-wrap">
+        <div class="stat-value">${subsDisplay}</div>
+        ${result.subs != null ? deltaHTML(result.subs, prevSnapshot ? prevSnapshot.subs : null) : ''}
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-label">Total views</div>
+      <div class="stat-value-wrap">
+        <div class="stat-value">${fmtNum(result.views)}</div>
+        ${deltaHTML(result.views, prevSnapshot ? prevSnapshot.views : null)}
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-label">Videos</div>
+      <div class="stat-value-wrap">
+        <div class="stat-value">${fmtNum(result.videos)}</div>
+        ${deltaHTML(result.videos, prevSnapshot ? prevSnapshot.videos : null)}
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-label">Avg. views / video</div>
+      <div class="stat-value-wrap">
+        <div class="stat-value">${result.avgViews != null ? fmtCompact(result.avgViews) : '—'}</div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <button class="ghost view-videos-btn" data-channel-id="${result.id}" data-channel-name="${result.name.replace(/"/g,'&quot;')}" data-uploads="${result.uploadsPlaylist || ''}">Videos</button>
+    </div>
+  `;
+  return card;
+}
+
+function renderSummary(results){
+  const valid = results.filter(r => !r.error);
+  if(!valid.length){ summaryEl.style.display = 'none'; return; }
+  const totalSubs = valid.reduce((s,r) => s + (r.subs || 0), 0);
+  const totalViews = valid.reduce((s,r) => s + r.views, 0);
+  const totalVideos = valid.reduce((s,r) => s + r.videos, 0);
+  summaryEl.innerHTML = `
+    <div class="summary-cell">
+      <div class="summary-label">Channels tracked</div>
+      <div class="summary-value">${valid.length}</div>
+    </div>
+    <div class="summary-cell">
+      <div class="summary-label">Combined subscribers</div>
+      <div class="summary-value">${fmtCompact(totalSubs)}</div>
+    </div>
+    <div class="summary-cell">
+      <div class="summary-label">Combined views</div>
+      <div class="summary-value">${fmtCompact(totalViews)}</div>
+    </div>
+    <div class="summary-cell">
+      <div class="summary-label">Combined videos</div>
+      <div class="summary-value">${fmtNum(totalVideos)}</div>
+    </div>
+  `;
+  summaryEl.style.display = 'grid';
+}
+
+async function loadAllChannels(){
+  if(!config.apiKey || !config.channels.length){
+    emptyState.style.display = 'block';
+    gridEl.innerHTML = '';
+    summaryEl.style.display = 'none';
+    return;
+  }
+  emptyState.style.display = 'none';
+  refreshBtn.disabled = true;
+  refreshBtn.textContent = 'Loading…';
+  gridEl.innerHTML = '';
+
+  const history = loadHistory();
+  const today = todayKey();
+  const todaySnapshot = history[today] || {};
+
+  const results = [];
+  for(let i=0; i<config.channels.length; i++){
+    const ref = config.channels[i];
+    try{
+      const r = await fetchChannel(config.apiKey, ref);
+      results.push(r);
+      todaySnapshot[r.id] = { subs: r.subs, views: r.views, videos: r.videos, ref: r.ref };
+    } catch(e){
+      results.push({ error: e.message, ref });
+    }
+  }
+  history[today] = todaySnapshot;
+  saveHistory(history);
+
+  results.forEach((r, i) => {
+    const prev = r.error ? null : mostRecentPriorSnapshot(history, r.id, today);
+    gridEl.appendChild(renderCard(r, prev, ACCENTS[i % ACCENTS.length]));
+  });
+  renderSummary(results);
+  attachVideoButtonListeners();
+
+  refreshBtn.disabled = false;
+  refreshBtn.textContent = 'Refresh';
+}
+
+refreshBtn.addEventListener('click', loadAllChannels);
+
+// ---- Video panel ----
+const videoPanel = document.getElementById('videoPanel');
+const videoPanelTitle = document.getElementById('videoPanelTitle');
+const videoListEl = document.getElementById('videoList');
+const videoSortEl = document.getElementById('videoSort');
+const closeVideoPanelBtn = document.getElementById('closeVideoPanel');
+let currentVideos = [];
+
+function attachVideoButtonListeners(){
+  document.querySelectorAll('.view-videos-btn').forEach(btn => {
+    btn.addEventListener('click', () => openVideoPanel(btn.dataset.channelId, btn.dataset.channelName, btn.dataset.uploads));
+  });
+}
+
+async function openVideoPanel(channelId, channelName, uploadsPlaylist){
+  videoPanelTitle.textContent = `${channelName} — recent videos`;
+  videoPanel.style.display = 'block';
+  videoListEl.innerHTML = '<div class="video-loading">Loading videos…</div>';
+  videoPanel.scrollIntoView({ behavior:'smooth', block:'start' });
+
+  if(!uploadsPlaylist){
+    videoListEl.innerHTML = '<div class="video-empty">Could not find an uploads list for this channel.</div>';
+    return;
+  }
+  try{
+    currentVideos = await fetchChannelVideos(config.apiKey, uploadsPlaylist);
+    renderVideoList();
+  } catch(e){
+    videoListEl.innerHTML = `<div class="video-empty">${e.message}</div>`;
+  }
+}
+
+function renderVideoList(){
+  if(!currentVideos.length){
+    videoListEl.innerHTML = '<div class="video-empty">No videos found.</div>';
+    return;
+  }
+  const sortBy = videoSortEl.value;
+  const sorted = [...currentVideos].sort((a,b) => {
+    if(sortBy === 'views') return b.views - a.views;
+    if(sortBy === 'likes') return (b.likes||0) - (a.likes||0);
+    if(sortBy === 'comments') return (b.comments||0) - (a.comments||0);
+    return new Date(b.publishedAt) - new Date(a.publishedAt);
+  });
+
+  videoListEl.innerHTML = '';
+  sorted.forEach(v => {
+    const row = document.createElement('div');
+    row.className = 'video-row';
+    const pubDate = new Date(v.publishedAt).toLocaleDateString('en-US',{month:'short', day:'numeric', year:'numeric'});
+    const engagement = v.views ? (((v.likes||0)+(v.comments||0)) / v.views * 100).toFixed(2) : null;
+    const descSnippet = v.description ? v.description.slice(0,220) + (v.description.length > 220 ? '…' : '') : 'No description.';
+
+    row.innerHTML = `
+      <div class="video-row-main">
+        ${v.thumb ? `<img class="video-row-thumb" src="${v.thumb}" alt="">` : ''}
+        <div>
+          <div class="video-row-title">${v.title}</div>
+          <div class="video-row-sub">${pubDate} · ${v.duration}</div>
+        </div>
+        <div class="video-row-stats">
+          <div class="video-row-views">${fmtCompact(v.views)} views</div>
+          <div class="video-row-stats-sub">${v.likes != null ? fmtCompact(v.likes)+' likes' : 'likes hidden'} · ${v.comments != null ? fmtCompact(v.comments)+' comments' : 'comments off'}</div>
+        </div>
+      </div>
+      <div class="video-row-detail">
+        <div>${descSnippet}</div>
+        <div class="video-row-detail-stats">
+          <div class="video-row-detail-stat"><strong>${v.tagCount}</strong> tags</div>
+          <div class="video-row-detail-stat"><strong>${engagement != null ? engagement+'%' : '—'}</strong> engagement rate</div>
+          <div class="video-row-detail-stat"><strong>${v.duration}</strong> length</div>
+        </div>
+      </div>
+    `;
+    row.addEventListener('click', () => row.classList.toggle('expanded'));
+    videoListEl.appendChild(row);
+  });
+}
+
+videoSortEl.addEventListener('change', renderVideoList);
+closeVideoPanelBtn.addEventListener('click', () => { videoPanel.style.display = 'none'; });
+
+// initial load
+if(config.apiKey && config.channels.length){
+  loadAllChannels();
+} else {
+  emptyState.style.display = 'block';
+  openSetup();
+}
+</script>
+</body>
+</html>
